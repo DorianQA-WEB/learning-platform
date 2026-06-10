@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import async_session, AsyncSession
 
-from api.models import UserCreate, ShowUser
+from api.models import UserCreate, ShowUser, DeleteUserResponse
 from db.dals import UserDAL
 from db.session import get_db
 
