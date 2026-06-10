@@ -41,6 +41,24 @@ async def _delete_user(user_id, db) -> Union[UUID, None]:
             deleted_user = await user_dal.delete_user(user_id)
             return deleted_user
 
+async def _get_user_by_id(user_id, db) -> Union[ShowUser, None]:
+    async with db as session:
+      async with session.begin():
+          user_dal = UserDAL(session)
+          user = await user_dal.get_user_by_id(
+                user_id=user_id)
+          if user is not None:
+              return ShowUser(
+                  user_id=user.user_id,
+                  name=user.name,
+                  surname=user.surname,
+                  email=user.email,
+                  is_active=user.is_active
+              )
+
+
+
+
 
 
 @user_router.post('/', response_model=ShowUser)
@@ -53,3 +71,10 @@ async def delete_user(user_id: UUID, db: AsyncSession = Depends(get_db)) -> Dele
     if deleted_user_id is None:
         raise HTTPException(status_code=404, detail=f"User with id {user_id} not found")
     return DeleteUserResponse(user_id=deleted_user_id)
+
+@user_router.get('/',  response_model=ShowUser)
+async def get_user_by_id(user_id: UUID, db: AsyncSession = Depends(get_db)) -> ShowUser:
+    user = await _get_user_by_id(user_id, db)
+    if user is None:
+        raise HTTPException(status_code=404, detail=f"User with id {user_id} not found")
+    return user

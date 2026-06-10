@@ -8,7 +8,7 @@ async def test_create_user(client, get_user_from_database):
         "surname": "Ivanov",
         "email": "ivan@ivanov.com"
     }
-    resp = client.post("users/", data=json.dumps(user_data))
+    resp = client.post("/users/", data=json.dumps(user_data))
     resp_data = resp.json()
     assert resp.status_code == 200
     assert resp_data["name"] == user_data["name"]
@@ -34,7 +34,7 @@ async def test_delete_user(client, create_user_in_database, get_user_from_databa
     }
 
     await create_user_in_database(**user_data)
-    response = client.delete(f"users/?user_id={user_data['user_id']}")
+    response = client.delete(f"/users/?user_id={user_data['user_id']}")
     assert response.status_code == 200
     assert response.json() == {"deleted_user_id": str(user_data["user_id"])}
     users_from_db = await get_user_from_database(user_data["user_id"])
@@ -46,3 +46,20 @@ async def test_delete_user(client, create_user_in_database, get_user_from_databa
     assert user_from_db["user_id"] == user_data["user_id"]
 
 
+async def test_get_user(client, create_user_in_database, get_user_from_db):
+    user_data = {
+        "user_id": uuid4(),
+        "name": "Ivan",
+        "surname": "Ivanov",
+        "email": "ivan@ivanov.com",
+        "is_active": True
+    }
+    await create_user_in_database(**user_data)
+    resp = client.get(f'/user/user_id?user_id={user_data["user_id"]}')
+    assert resp.status_code == 200
+    user_from_response = resp.json()
+    assert user_from_response['user_id'] == str(user_data["user_id"])
+    assert user_from_response['is_active'] is True
+    assert user_from_response['email'] == str(user_data['email'])
+    assert user_from_response['name'] == str(user_data['name'])
+    assert user_from_response['surname'] == str(user_data['surname'])
