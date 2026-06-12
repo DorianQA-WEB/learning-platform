@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import async_session, AsyncSession
 
-from api.models import UserCreate, ShowUser, DeleteUserResponse
+from api.models import UserCreate, ShowUser, DeleteUserResponse, UpdateUserRequest, UpdateUserResponse
 from db.dals import UserDAL
 from db.session import get_db
 
@@ -56,6 +56,15 @@ async def _get_user_by_id(user_id, db) -> Union[ShowUser, None]:
                   is_active=user.is_active
               )
 
+async def _update_user(updated_user_params: dict, user_id: UUID, db) -> Union[UUID, None]:
+    async with db as session:
+        async with session.begin():
+            user_dal = UserDAL(session)
+            update_user_id = await user_dal.update_user(
+                user_id=user_id,
+                **updated_user_params
+            )
+            return update_user_id
 
 
 
@@ -78,3 +87,18 @@ async def get_user_by_id(user_id: UUID, db: AsyncSession = Depends(get_db)) -> S
     if user is None:
         raise HTTPException(status_code=404, detail=f"User with id {user_id} not found")
     return user
+
+@user_router.patch('/', response_model=UpdateUserResponse)
+async def update_user_by_id(
+        user_id: UUID,
+        body: UpdateUserRequest,
+        db: AsyncSession =  Depends(get_db)) -> UpdateUserResponse:
+    updated_user_params = body.model_dump(exclude_none=True)
+    if updated_user_params == {}:
+        raise HTTPException(status_code=400, detail="At least one parameter for user update info should be provided")
+    user = await _get_user_by_id(user_id, db)
+    if user is None:
+        raise HTTPException(status_code=404, detail=f"User with id {user_id} not found")
+    updated_user_id = await _update_user(updated_user_params=updated_user_params, db=db, user_id=user_id)
+    return UpdateUserResponse(updated_user_id=updated_user_id)
+

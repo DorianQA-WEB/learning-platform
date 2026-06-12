@@ -50,7 +50,7 @@ class DeleteUserResponse(BaseModel):
     deleted_user_id: uuid.UUID
 
 
-class UserUpdateRequest(BaseModel):
+class UpdateUserRequest(BaseModel):
     name: Optional[constr(min_length=1)]
     surname: Optional[constr(min_length=1)]
     email: Optional[EmailStr]
@@ -70,6 +70,6 @@ class UserUpdateRequest(BaseModel):
         return surname
 
 
-class UserUpdateResponse(BaseModel):
+class UpdateUserResponse(BaseModel):
     update_user_id: uuid.UUID
 

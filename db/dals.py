@@ -45,3 +45,11 @@ class UserDAL:
         user_row = response.fetchone()
         if user_row is not None:
             return user_row[0]
+
+
+    async def update_user(self, user_id: UUID, **kwargs) -> Union[UUID, None]:
+        query = update(User).where(and_(User.is_active == True, User.user_id == user_id)).values(kwargs).returning(User.user_id)
+        response = await self.db_session.execute(query)
+        updated_user_id_row = response.fetchone()
+        if updated_user_id_row is not None:
+            return updated_user_id_row[0]
