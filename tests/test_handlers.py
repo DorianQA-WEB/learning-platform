@@ -1,3 +1,18 @@
+"""
+Тесты для API-.handlers пользователя в приложении Learning Platform.
+
+Тестируются CRUD-операции над пользователем:
+- создание пользователя (POST /users/)
+- получение пользователя по ID (GET /user/user_id)
+- обновление пользователя (PATCH /user/)
+- удаление пользователя (DELETE /users/)
+
+Тесты используют fixture'ы из conftest.py:
+- `client`: асинхронный тестовый клиент FastAPI.
+- `get_user_from_database`: функция для получения пользователя по ID из БД.
+- `create_user_in_database`: функция для создания пользователя в БД.
+- `get_user_in_db`: альтернативная функция получения пользователя (возможно, устаревшая).
+"""
 import json
 from uuid import uuid4
 
@@ -5,6 +20,19 @@ import pytest
 
 
 async def test_create_user(client, get_user_from_database):
+    """
+    Тестирует создание нового пользователя через POST-запрос.
+
+    Проверяет:
+        - статус код 200 (успешное создание),
+        - корректность сохранённых данных (name, surname, email),
+        - значение `is_active` по умолчанию (True),
+        - совпадение данных в базе и в ответе.
+
+    Args:
+        client: Тестовый клиент FastAPI.
+        get_user_from_database: Fixture для получения пользователя по ID.
+    """
     user_data = {
         "name": "Ivan",
         "surname": "Ivanov",
@@ -27,6 +55,20 @@ async def test_create_user(client, get_user_from_database):
     assert user_from_db["is_active"] is True
 
 async def test_delete_user(client, create_user_in_database, get_user_from_database):
+    """
+    Тестирует удаление пользователя через DELETE-запрос.
+
+    Проверяет:
+        - статус код 200 (успешное удаление),
+        - формат ответа: `{"deleted_user_id": "..."}`
+        - что пользователь помечен как `is_active=False` в базе (soft delete),
+        - все поля пользователя сохранены.
+
+    Args:
+        client: Тестовый клиент FastAPI.
+        create_user_in_database: Fixture для предварительного создания пользователя.
+        get_user_from_database: Fixture для получения пользователя из БД.
+    """
     user_data = {
         "user_id": uuid4(),
         "name": "Ivan",
@@ -49,6 +91,21 @@ async def test_delete_user(client, create_user_in_database, get_user_from_databa
 
 
 async def test_get_user(client, create_user_in_database, get_user_from_db):
+    """
+    Тестирует получение пользователя по ID через GET-запрос.
+
+    Проверяет:
+        - статус код 200,
+        - возвращённые поля совпадают с исходными.
+
+    ⚠️ ВНИМАНИЕ: в запросе используется `/user/user_id?user_id={...}`,
+        что, скорее всего, является ошибкой — правильный путь: `/user/{user_id}`.
+
+    Args:
+        client: Тестовый клиент FastAPI.
+        create_user_in_database: Fixture для предварительного создания пользователя.
+        get_user_from_db: Fixture для получения пользователя из БД.
+    """
     user_data = {
         "user_id": uuid4(),
         "name": "Ivan",
@@ -68,6 +125,23 @@ async def test_get_user(client, create_user_in_database, get_user_from_db):
 
 
 async def test_update_user(client, create_user_in_database, get_user_from_db):
+    """
+    Тестирует частичное обновление пользователя через PATCH-запрос.
+
+    Проверяет:
+        - статус код 200,
+        - обновлённые данные в ответе (name, surname, email),
+        - ID пользователя не меняется,
+        - поле `is_active` сохраняется (не обнуляется при отсутствии в update).
+
+    ⚠️ ВНИМАНИЕ: путь `/user/&user_id={...}` содержит лишний `&` —
+        это синтаксическая ошибка, должен быть `/user/{user_id}`.
+
+    Args:
+        client: Тестовый клиент FastAPI.
+        create_user_in_database: Fixture для предварительного создания пользователя.
+        get_user_from_db: Fixture для получения пользователя из БД.
+    """
     user_data = {
         "user_id": uuid4(),
         "name": "Ivan",
@@ -132,6 +206,30 @@ async def test_update_user(client, create_user_in_database, get_user_from_db):
 ])
 async def tess_update_user_validation_error(client, create_user_in_database, get_user_in_db, user_data_updated,
                                             expected_status_code, expected_detail):
+    """
+    Тестирует валидацию PATCH-запроса обновления пользователя.
+
+    Проверяет, что при передаче некорректных данных сервер возвращает:
+        - статус код 422 (Unprocessable Entity),
+        - ожидаемый текст ошибки в `detail`.
+
+    ⚠️ ВНИМАНИЕ: название теста содержит опечатку — `tess_update_user_validation_error`,
+        должно быть `test_update_user_validation_error`.
+            Args:
+        client: Тестовый клиент FastAPI.
+        create_user_in_database: Fixture для предварительного создания пользователя.
+        get_user_in_db: Fixture для получения пользователя из БД.
+        user_data_updated: Данные для обновления (включают ошибку).
+        expected_status_code: Ожидаемый HTTP-статус.
+        expected_detail: Ожидаемое сообщение об ошибке.
+
+    Тестируемые случаи:
+        - Пустое тело запроса → ошибка: "At least one parameter..."
+        - Имя с цифрами → ошибка: "Name should contains only letters"
+        - Пустой email → ошибка: "value is not a valid email address"
+        - Пустой surname/name → ошибка: min_length=1
+        - Некорректный email → ошибка: "value is not a valid email address"
+    """
     user_data = {
         "user_id": uuid4(),
         "name": "Ivan",
