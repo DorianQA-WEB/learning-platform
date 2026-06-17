@@ -37,3 +37,33 @@ async def test_get_user(client, create_user_in_database, get_user_from_db):
     assert user_from_response['email'] == user_data['email']
     assert user_from_response['name'] == user_data['name']
     assert user_from_response['surname'] == user_data['surname']
+
+async def test_get_user_id_validation_error(client, create_user_in_database, get_user_from_db):
+    user_data = {
+        "user_id": uuid4(),
+        "name": "Ivan",
+        "surname": "Ivanov",
+        "email": "ivan@ivanov.com",
+        "is_active": True
+    }
+    await create_user_in_database(**user_data)
+    response = client.get(f'/user/?user_id=123')
+    assert response.status_code == 422
+    data_from_response = response.json()
+    assert data_from_response == {'detail': [{'loc': ['query', 'user_id'], 'msg': 'value is not a valid uuid',
+                                              'type': 'type_error.uuid'}]}
+
+async def test_get_user_not_found(client, create_user_in_database, get_user_from_db):
+    user_data = {
+        "user_id": uuid4(),
+        "name": "Ivan",
+        "surname": "Ivanov",
+        "email": "ivan@ivanov.com",
+        "is_active": True
+    }
+    user_id_not_found = uuid4()
+    await create_user_in_database(**user_data)
+    response = client.get(f'/user/user_id?user_id={user_id_not_found}')
+    assert response.status_code == 404
+    data_from_response = response.json()
+    assert data_from_response == {'detail': f'User with id {user_id_not_found} not found'}
