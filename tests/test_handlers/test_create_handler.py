@@ -23,7 +23,7 @@ async def test_create_user(client, get_user_from_database):
         "surname": "Ivanov",
         "email": "ivan@ivanov.com"
     }
-    resp = client.post("/users/", data=json.dumps(user_data))
+    resp = client.post("/user/", data=json.dumps(user_data))
     resp_data = resp.json()
     assert resp.status_code == 200
     assert resp_data["name"] == user_data["name"]
@@ -41,6 +41,20 @@ async def test_create_user(client, get_user_from_database):
 
 
 async def test_create_user_duplicate_email_error(client, get_user_from_db):
+    """
+    Тестирует ошибку при попытке создать пользователя с уже существующим email.
+
+    Проверяет:
+        - статус код 503 (database error, уникальное ограничение),
+        - сообщение об ошибке содержит "duplicate key value violates unique constraint".
+
+    ⚠️ ОШИБКА В ПУТИ: использует `/user/`, тогда как в первой части теста — `/users/`.
+       Если роутер зарегистрирован только под `/users/`, этот тест будет падать с 404.
+
+    Args:
+        client: Тестовый клиент FastAPI.
+        get_user_from_db: Fixture для получения пользователя из БД.
+    """
     user_data = {
         "name": "Ivan",
         "surname": "Ivanov",
@@ -81,6 +95,21 @@ async def test_create_user_duplicate_email_error(client, get_user_from_db):
                        'msg': 'value is not a valid email address', 'type': 'value_error.email'}]}),
 ])
 async def test_create_user_validation_error(client, user_data_for_creation, expected_status_code, expected_detail):
+    """
+    Тестирует валидацию данных при создании пользователя.
+
+    Проверяет:
+        - статус код 422 при передаче некорректных данных,
+        - правильные сообщения об ошибках для каждого поля.
+
+    ⚠️ Использует путь `/user/`, что может не совпадать с роутом.
+
+    Args:
+        client: Тестовый клиент FastAPI.
+        user_data_for_creation: Данные для создания (с ошибкой).
+        expected_status_code: Ожидаемый HTTP-статус (422).
+        expected_detail: Ожидаемое сообщение об ошибке.
+    """
     response = client.post("/user/", data=json.dumps(user_data_for_creation))
     data_from_response = response.json()
     assert response.status_code == expected_status_code

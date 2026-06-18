@@ -125,6 +125,16 @@ async def tess_update_user_validation_error(client, create_user_in_database, get
     assert resp_data == expected_detail
 
 async def test_update_user_check_one_is_updated(client, create_user_in_database, get_user_from_db):
+    """
+    Проверяет, что обновление одного пользователя **не затрагивает других**.
+
+    Создаёт трёх пользователей, обновляет первого и убеждается, что второй и третий не изменились.
+
+    Args:
+        client: Тестовый клиент FastAPI.
+        create_user_in_database: Fixture для предварительного создания пользователей.
+        get_user_from_db: Fixture для получения пользователя из БД.
+    """
     user_data_1 = {
         "user_id": uuid4(),
         "name": "Ivan",
@@ -184,6 +194,16 @@ async def test_update_user_check_one_is_updated(client, create_user_in_database,
 
 
 async def test_update_user_id_validation_error(client, create_user_in_database, get_user_from_db):
+    """
+    Проверяет валидацию формата `user_id` в query-параметре.
+
+    Если передан невалидный UUID (например, "123"), возвращается ошибка 422 с описанием.
+
+    Args:
+        client: Тестовый клиент FastAPI.
+        create_user_in_database: Fixture для создания пользователя (не требуется, так как ID невалидный).
+        get_user_from_db: Fixture для получения пользователя (не используется).
+    """
     user_data_updated = {
         'name': 'Petr',
         'surname': 'Petrov',
@@ -196,6 +216,14 @@ async def test_update_user_id_validation_error(client, create_user_in_database, 
                                               'type': 'type_error.uuid'}]}
 
 async def test_update_user_not_found(client, create_user_in_database, get_user_from_db):
+    """
+    Проверяет, что при попытке обновления несуществующего пользователя возвращается 404.
+
+    Args:
+        client: Тестовый клиент FastAPI.
+        create_user_in_database: Fixture для создания пользователя (не требуется, так как ID случайный).
+        get_user_from_db: Fixture для получения пользователя (не используется).
+    """
     user_data_updated = {
         'name': 'Petr',
         'surname': 'Petrov',
@@ -208,6 +236,16 @@ async def test_update_user_not_found(client, create_user_in_database, get_user_f
     assert data_from_response == {'detail': f"User with id {user_id} not found"}
 
 async def test_update_user_duplicate_email_error(client, create_user_in_database, get_user_from_db):
+    """
+    Проверяет, что обновление email на уже занятый возвращает ошибку 503 (уровень БД).
+
+    В текущем приложении уникальность email проверяется на уровне PostgreSQL (ограничение `UNIQUE`).
+
+    Args:
+        client: Тестовый клиент FastAPI.
+        create_user_in_database: Fixture для создания двух пользователей.
+        get_user_from_db: Fixture для получения пользователя (не используется).
+    """
     user_data_1 = {
         "user_id": uuid4(),
         "name": "Vasiliy",
