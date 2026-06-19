@@ -10,11 +10,7 @@ from main import app
 import asyncpg
 
 
-# create async engine for interaction with db
-test_engine = create_async_engine(settings.TEST_DATABASE_URL, future=True, echo=True)
 
-# create session maker for interaction with db
-test_async_session = async_sessionmaker(test_engine, expire_on_commit=False, class_=AsyncSession)
 
 CLEAN_TABLES = [
     'users',
@@ -49,6 +45,11 @@ async def clean_tables(async_session_test):
 
 async def _get_test_db():
     try:
+        # create async engine for interaction with db
+        test_engine = create_async_engine(settings.TEST_DATABASE_URL, future=True, echo=True)
+
+        # create session maker for interaction with db
+        test_async_session = async_sessionmaker(test_engine, expire_on_commit=False, class_=AsyncSession)
         yield test_async_session()
     finally:
         pass
