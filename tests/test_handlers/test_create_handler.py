@@ -1,5 +1,4 @@
 import json
-from uuid import uuid4
 
 import pytest
 
@@ -18,11 +17,7 @@ async def test_create_user(client, get_user_from_database):
         client: Тестовый клиент FastAPI.
         get_user_from_database: Fixture для получения пользователя по ID.
     """
-    user_data = {
-        "name": "Ivan",
-        "surname": "Ivanov",
-        "email": "ivan@ivanov.com"
-    }
+    user_data = {"name": "Ivan", "surname": "Ivanov", "email": "ivan@ivanov.com"}
     resp = client.post("/user/", data=json.dumps(user_data))
     resp_data = resp.json()
     assert resp.status_code == 200
@@ -55,15 +50,11 @@ async def test_create_user_duplicate_email_error(client, get_user_from_db):
         client: Тестовый клиент FastAPI.
         get_user_from_db: Fixture для получения пользователя из БД.
     """
-    user_data = {
-        "name": "Ivan",
-        "surname": "Ivanov",
-        "email": "ivan@ivanov.com"
-    }
-    user_data_same_email ={
-        'name': 'Peter',
-        'surname': 'Petrov',
-        'email': 'ivan@ivanov.com'
+    user_data = {"name": "Ivan", "surname": "Ivanov", "email": "ivan@ivanov.com"}
+    user_data_same_email = {
+        "name": "Peter",
+        "surname": "Petrov",
+        "email": "ivan@ivanov.com",
     }
     response = client.post("/user/", data=json.dumps(user_data))
     data_from_response = response.json()
@@ -78,23 +69,70 @@ async def test_create_user_duplicate_email_error(client, get_user_from_db):
     assert user_from_db["email"] == user_data["email"]
     assert user_from_db["name"] == user_data["name"]
     assert user_from_db["surname"] == user_data["surname"]
-    assert user_from_db['is_active'] is True
+    assert user_from_db["is_active"] is True
     assert str(user_from_db["user_id"]) == data_from_response["user_id"]
     response = client.post("/user/", data=json.dumps(user_data_same_email))
     assert response.status_code == 503
-    assert 'duplicate key value violates unique constraint "users_email_key"' in response.json()['detail']
+    assert (
+        'duplicate key value violates unique constraint "users_email_key"'
+        in response.json()["detail"]
+    )
 
-@pytest.mark.parametrize("user_data_for_creation, expected_status_code, expected_detail", [
-    ({}, 422, {'detail': [{'loc': ['body', 'name'], 'msg': 'field required', 'type': 'value_error.missing'},
-                          {'loc': ['body', 'surname'], 'msg': 'field required', 'type': 'value_error.missing'},
-                          {'loc': ['body', 'email'], 'msg': 'field required', 'type': 'value_error.missing'}]}),
-    ({'name': 123, "surname": 456, "email" : 'lol'}, 422, {'detail': 'Name should contains only letters'}),
-    ({'name': 'Ivan', 'surname': 456, 'email': 'lol'}, 422, {'detail': 'Surname should contains only letters'}),
-    ({'name': 'Ivan', 'surname': 'Ivanov', 'email': 'lol'},
-     422, {'detail': [{'loc': ['body', 'email'],
-                       'msg': 'value is not a valid email address', 'type': 'value_error.email'}]}),
-])
-async def test_create_user_validation_error(client, user_data_for_creation, expected_status_code, expected_detail):
+
+@pytest.mark.parametrize(
+    "user_data_for_creation, expected_status_code, expected_detail",
+    [
+        (
+            {},
+            422,
+            {
+                "detail": [
+                    {
+                        "loc": ["body", "name"],
+                        "msg": "field required",
+                        "type": "value_error.missing",
+                    },
+                    {
+                        "loc": ["body", "surname"],
+                        "msg": "field required",
+                        "type": "value_error.missing",
+                    },
+                    {
+                        "loc": ["body", "email"],
+                        "msg": "field required",
+                        "type": "value_error.missing",
+                    },
+                ]
+            },
+        ),
+        (
+            {"name": 123, "surname": 456, "email": "lol"},
+            422,
+            {"detail": "Name should contains only letters"},
+        ),
+        (
+            {"name": "Ivan", "surname": 456, "email": "lol"},
+            422,
+            {"detail": "Surname should contains only letters"},
+        ),
+        (
+            {"name": "Ivan", "surname": "Ivanov", "email": "lol"},
+            422,
+            {
+                "detail": [
+                    {
+                        "loc": ["body", "email"],
+                        "msg": "value is not a valid email address",
+                        "type": "value_error.email",
+                    }
+                ]
+            },
+        ),
+    ],
+)
+async def test_create_user_validation_error(
+    client, user_data_for_creation, expected_status_code, expected_detail
+):
     """
     Тестирует валидацию данных при создании пользователя.
 

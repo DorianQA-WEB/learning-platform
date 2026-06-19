@@ -1,7 +1,4 @@
-import json
 from uuid import uuid4
-
-import pytest
 
 
 async def test_delete_user(client, create_user_in_database, get_user_from_database):
@@ -24,7 +21,7 @@ async def test_delete_user(client, create_user_in_database, get_user_from_databa
         "name": "Ivan",
         "surname": "Ivanov",
         "email": "ivan@ivanov.com",
-        'is_active': True
+        "is_active": True,
     }
 
     await create_user_in_database(**user_data)
@@ -39,15 +36,24 @@ async def test_delete_user(client, create_user_in_database, get_user_from_databa
     assert user_from_db["is_active"] is False
     assert user_from_db["user_id"] == user_data["user_id"]
 
+
 async def test_delete_user_not_found(client):
     user_id = uuid4()
     response = client.delete(f"/user/?user_id={user_id}")
     assert response.status_code == 404
     assert response.json() == {"detail": f"User with id {user_id} not found."}
 
+
 async def test_delete_user_id_validation_error(client):
     response = client.delete("/user/?user_id=123")
     assert response.status_code == 422
     data_from_response = response.json()
-    assert data_from_response == {'detail': [{'loc': ['query', 'user_id'], 'msg': 'value is not a valid uuid',
-                                              'type': 'type_error.uuid'}]}
+    assert data_from_response == {
+        "detail": [
+            {
+                "loc": ["query", "user_id"],
+                "msg": "value is not a valid uuid",
+                "type": "type_error.uuid",
+            }
+        ]
+    }
