@@ -16,6 +16,7 @@ from api.models import UpdateUserResponse
 from api.models import UserCreate
 from db.dals import UserDAL
 from db.session import get_db
+from hashing import Hasher
 
 """
 Модуль обработчиков (handlers) для API-роутов пользователя.
@@ -63,6 +64,7 @@ async def _create_new_user(body: UserCreate) -> ShowUser:
                 surname=user.surname,
                 email=user.email,
                 is_active=user.is_active,
+                hashed_password=Hasher.get_password_hash(body.password),
             )
 
 
