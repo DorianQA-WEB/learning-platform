@@ -138,3 +138,7 @@ class UpdateUserResponse(BaseModel):
     """Модель ответа на запрос обновления пользователя (PATCH /user/)."""
 
     update_user_id: uuid.UUID
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
