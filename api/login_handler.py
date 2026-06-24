@@ -1,3 +1,20 @@
+"""
+Модуль аутентификации пользователя и выдачи JWT-токенов.
+
+Определяет:
+- Эндпоинт /token для получения access_token через OAuth2PasswordRequestForm.
+- Логику аутентификации: проверка email + hashed_password через Hasher.
+- Валидацию срока действия токена через timedelta.
+
+⚠️ КРИТИЧЕСКИЕ ПРОБЛЕМЫ (требуют исправления):
+1. Отсутствует импорт `create_access_token` — вызывает `NameError`.
+2. `async with db as session` — избыточно, `db` уже AsyncSession, что может привести к предупреждениям.
+3. Жёстко задано `timedelta(minutes=60)` — вместо этого нужно использовать `settings.ACCESS_TOKEN_EXPIRE_MINUTES`.
+4. `from hashing import Hasher` — предполагается наличие модуля hashing.py (обычно в корне или utils.py).
+
+Если `create_access_token` лежит в другом файле (utils.py, security.py, jwt.py), его нужно добавить в импорты.
+"""
+
 from datetime import timedelta
 
 from fastapi import APIRouter
